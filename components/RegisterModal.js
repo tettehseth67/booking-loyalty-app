@@ -1,23 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Modal,
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    StyleSheet,
-    Dimensions,
+    Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions
 } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withSpring,
-    withTiming,
+    useSharedValue, useAnimatedStyle, withSpring, withTiming
 } from 'react-native-reanimated';
 
 const screen = Dimensions.get('window');
 
 export default function RegisterModal({ visible, onClose, onLoginOpen }) {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+
     const scale = useSharedValue(0);
     const opacity = useSharedValue(0);
 
@@ -36,18 +33,78 @@ export default function RegisterModal({ visible, onClose, onLoginOpen }) {
         opacity: opacity.value,
     }));
 
+    const handleRegister = async () => {
+        if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://10.0.0.245/register.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Registration successful!');
+                onClose(); // Close the modal or switch to login
+            } else {
+                alert(data.message || 'Registration failed');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred. Please try again.');
+        }
+    };
+
+
     return (
         <Modal visible={visible} animationType="none" transparent>
             <View style={styles.overlay}>
                 <Animated.View style={[styles.modal, animatedStyle]}>
                     <Text style={styles.title}>Register</Text>
 
-                    <TextInput style={styles.input} placeholder="Name" />
-                    <TextInput style={styles.input} placeholder="Email" />
-                    <TextInput style={styles.input} placeholder="Password" secureTextEntry />
-                    <TextInput style={styles.input} placeholder="Confirm Password" secureTextEntry />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Name"
+                        value={name}
+                        onChangeText={setName}
+                        accessibilityLabel="Name input"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        value={email}
+                        onChangeText={setEmail}
+                        accessibilityLabel="Email input"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                        accessibilityLabel="Password input"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Confirm Password"
+                        secureTextEntry
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        accessibilityLabel="Confirm Password input"
+                    />
 
-                    <TouchableOpacity style={styles.button} onPress={onClose}>
+                    {error ? <Text style={styles.error}>{error}</Text> : null}
+
+                    <TouchableOpacity style={styles.button} onPress={handleRegister}>
                         <Text style={styles.buttonText}>Create Account</Text>
                     </TouchableOpacity>
 
@@ -95,4 +152,5 @@ const styles = StyleSheet.create({
     buttonText: { color: '#fff', fontWeight: '600' },
     link: { color: '#007bff', textAlign: 'center', marginTop: 8 },
     linkClose: { color: '#888', textAlign: 'center', marginTop: 12 },
+    error: { color: 'red', textAlign: 'center', marginBottom: 10 },
 });
