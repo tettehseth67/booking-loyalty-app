@@ -109,7 +109,7 @@ export default function HomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, backgroundColor: '#fff', marginBottom: 20 },
+    container: { flex: 1, padding: 15, backgroundColor: '#fff' },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     welcome: { fontSize: 24, fontWeight: '600', marginBottom: 20 },
     banner: {
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9f9f9',
         padding: 12,
         borderRadius: 8,
-        marginBottom: 8,
+        marginBottom: 5,
     },
     loginButton: {
         backgroundColor: '#007bff',

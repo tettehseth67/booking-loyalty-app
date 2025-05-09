@@ -2,6 +2,8 @@
 import React from 'react';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import BottomTabNavigator from './BottomTabNavigator';
+import BookingHistoryScreen from '../screens/BookingHistoryScreen';
+import RewardScreen from '../screens/RewardScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -29,6 +31,21 @@ export default function DrawerNavigator() {
                     ),
                 }}
             />
+            <Drawer.Screen name="History" component={BookingHistoryScreen} 
+                options={{
+                    drawerIcon: ({ color }) => (
+                        <Ionicons name="time-outline" size={24} color={color} />
+                    ),
+                }}
+            />
+            <Drawer.Screen name="Rewards" component={RewardScreen} 
+                options={{
+                    drawerIcon: ({ color }) => (
+                        <Ionicons name="star-outline" size={24} color={color} />
+                    ),
+                }}
+            />
+
             <Drawer.Screen name="Settings" component={SettingsScreen} 
                 options={{
                     drawerIcon: ({ color }) => (

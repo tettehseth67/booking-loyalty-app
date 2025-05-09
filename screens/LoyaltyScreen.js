@@ -1,85 +1,100 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    TouchableOpacity,
-    Alert,
-    Animated,
+    FlatList,
+    ActivityIndicator,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuthModals } from '../context/AuthModalContext';
 
 export default function LoyaltyScreen() {
-    const [points, setPoints] = useState(35); // Example points
-    const animatedWidth = useRef(new Animated.Value((35 / 50) * 100)).current;
-
-    const handleRedeem = () => {
-        if (points >= 50) {
-            Alert.alert('Redeemed!', 'You have redeemed your 50 points 🎉');
-            const newPoints = points - 50;
-            setPoints(newPoints);
-        } else {
-            Alert.alert('Not Enough Points', 'You need at least 50 points to redeem.');
-        }
-    };
+    const { user } = useAuthModals();
+    const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [points, setPoints] = useState(0);
+    const [lastVisit, setLastVisit] = useState(null);
 
     useEffect(() => {
-        const targetPercent = Math.min(points / 50, 1) * 100;
+        const loadBookings = async () => {
+            try {
+                const stored = await AsyncStorage.getItem('bookings');
+                const all = stored ? JSON.parse(stored) : [];
 
-        Animated.timing(animatedWidth, {
-            toValue: targetPercent,
-            duration: 500,
-            useNativeDriver: false,
-        }).start();
-    }, [points]);
+                const userBookings = all.filter(
+                    (b) => b.user === (user?.name || 'Guest')
+                );
+
+                setBookings(userBookings);
+                setPoints(userBookings.length * 10); // 10 pts per visit
+
+                if (userBookings.length > 0) {
+                    const last = new Date(
+                        userBookings[userBookings.length - 1].datetime
+                    );
+                    setLastVisit(last.toLocaleString());
+                }
+            } catch (err) {
+                console.error('Error loading loyalty data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadBookings();
+    }, [user]);
+
+    if (loading) return <ActivityIndicator size="large" color="#007bff" />;
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Loyalty Rewards</Text>
-            <Text style={styles.points}>You have {points} points</Text>
-
-            <View style={styles.progressBar}>
-                <Animated.View style={[styles.progressFill, {
-                    width: animatedWidth.interpolate({
-                        inputRange: [0, 100],
-                        outputRange: ['0%', '100%'],
-                    })
-                }]} />
-            </View>
-            <Text style={styles.goalText}>50 points = Free Service</Text>
-
-            <Text style={styles.earnInfo}>
-                Earn 10 points for every booking you complete.
+            <Text style={styles.title}>Loyalty Program</Text>
+            <Text style={styles.subtitle}>
+                Welcome back, {user?.name || 'Guest'}!
             </Text>
 
-            <TouchableOpacity style={styles.button} onPress={handleRedeem}>
-                <Text style={styles.buttonText}>Redeem Points</Text>
-            </TouchableOpacity>
+            <View style={styles.card}>
+                <Text style={styles.cardTitle}>Points Earned</Text>
+                <Text style={styles.points}>{points} pts</Text>
+                <Text style={styles.info}>
+                    Visits: {bookings.length}{"\n"}
+                    Last Visit: {lastVisit || 'N/A'}
+                </Text>
+            </View>
+
+            <Text style={styles.historyTitle}>Booking History</Text>
+            <FlatList
+                data={bookings}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item }) => (
+                    <View style={styles.bookingItem}>
+                        <Text>{item.service} - {new Date(item.datetime).toLocaleString()}</Text>
+                    </View>
+                )}
+                ListEmptyComponent={<Text>No bookings yet.</Text>}
+            />
         </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-    title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-    points: { fontSize: 22, textAlign: 'center', marginBottom: 10 },
-    progressBar: {
-        height: 20,
-        backgroundColor: '#eee',
+    title: { fontSize: 26, fontWeight: 'bold', marginBottom: 5 },
+    subtitle: { fontSize: 16, marginBottom: 20 },
+    card: {
+        backgroundColor: '#e6f0ff',
+        padding: 20,
         borderRadius: 10,
-        overflow: 'hidden',
-        marginBottom: 10,
+        marginBottom: 20,
     },
-    progressFill: {
-        height: '100%',
-        backgroundColor: '#007bff',
+    cardTitle: { fontSize: 18, fontWeight: '600' },
+    points: { fontSize: 32, fontWeight: 'bold', color: '#007bff' },
+    info: { fontSize: 14, marginTop: 5 },
+    historyTitle: { fontSize: 20, fontWeight: '600', marginBottom: 10 },
+    bookingItem: {
+        padding: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd',
     },
-    goalText: { fontSize: 16, textAlign: 'center', marginBottom: 20 },
-    earnInfo: { fontSize: 16, color: '#555', marginBottom: 30, textAlign: 'center' },
-    button: {
-        backgroundColor: '#28a745',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
-    buttonText: { color: '#fff', fontSize: 16 },
 });
